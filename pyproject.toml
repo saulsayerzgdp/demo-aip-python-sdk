@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "glaip-sdk>=0.0.5,<0.0.6",
-    "gllm-evals>=0.0.22,<0.0.23",
+    "gllm-evals[deepeval,langchain,ragas] (>=0.0.22,<0.0.23)",
     "python-dotenv>=1.0.0,<2.0.0",
     "deepeval (>=3.6.0,<4.0.0)",
 ]
@@ -19,9 +19,10 @@ name = "gen-ai"
 url = "https://glsdk.gdplabs.id/gen-ai/simple/"
 priority = "supplemental"
 
+
 [[tool.poetry.source]]
 name = "gen-ai-internal"
-url = "https://glsdk.gdplabs.id/gen-ai-internal/simple/"
+url = "https://asia-southeast2-python.pkg.dev/gdp-labs/gen-ai-internal/simple/"
 priority = "supplemental"
 
 [build-system]

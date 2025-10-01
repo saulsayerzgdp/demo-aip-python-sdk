@@ -19,17 +19,14 @@ async def main():
     """Main function to run the CV agent end-to-end pipeline."""
     
     client = Client()
-    
     queries = load_queries(CSV_FILE)
-    
     agent = create_agent(client)
+
+    results = process_queries(agent, queries)
+    save_results(results, CSV_FILE)
+    await evaluate_results(CSV_FILE)
     
-    try:
-        results = process_queries(agent, queries)
-        save_results(results, CSV_FILE)
-        await evaluate_results(CSV_FILE)
-    finally:
-        agent.delete()
+    agent.delete()
 
 
 if __name__ == "__main__":
