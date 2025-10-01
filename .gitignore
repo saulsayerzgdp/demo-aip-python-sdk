@@ -1,2 +1,4 @@
 .env
 .deepeval
+*.pyc
+__pycache__

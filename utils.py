@@ -134,13 +134,25 @@ def process_queries(agent, queries: list[dict[str, str]], file_path: str = "samp
     return results
 
 
-async def evaluate_results(csv_path: str) -> None:
-    """Evaluate the results using GEval.
+async def evaluate_results(agent, query_file: str = "cv_agent_results.csv", file_path: str = "sample_cv.pdf") -> None:
+    """Process queries, save results, and evaluate them using GEval.
 
     Args:
-        csv_path: Path to the CSV file with results
+        agent: The glaip_sdk agent to use
+        query_file: Path to the CSV file containing queries
+        file_path: Path to the file to process
     """
-    dataset = DictDataset.from_csv(csv_path)
+    # Load queries
+    queries = load_queries(query_file)
+    
+    # Process queries
+    results = process_queries(agent, queries, file_path)
+    
+    # Save results
+    save_results(results, query_file)
+    
+    # Evaluate results
+    dataset = DictDataset.from_csv(query_file)
     generation_evaluator = GEvalGenerationEvaluator(
         model="openai/gpt-4o-mini", model_credentials=os.getenv("OPENAI_API_KEY")
     )
