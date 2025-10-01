@@ -63,9 +63,8 @@ def create_agent(client: Client):
     
     agent = client.create_agent(
         name=f"cv-reader-agent-{uuid.uuid4().hex[:8]}",
-        instruction="""You are a helpful assistant that can read and analyze CV/resume files.
-Use the pdf_reader_tool to read PDF files when asked about CV content.
-Always use the tool to read the file before answering questions about it.""",
+        instruction="""You are a helpful assistant that can read and analyze CV/resume files using provided tools.
+Keep your answer concise and to the point.""",
         tools=[pdf_reader_tool],
     )
     
@@ -107,22 +106,13 @@ def process_queries(agent, queries: list[dict[str, str]], file_path: str = "samp
     """
     results = []
     
-    # Read the file once and reuse for all queries
-    try:
-        file_content, filename = read_file_as_binary(file_path)
-    except Exception as e:
-        print(f"Error reading file {file_path}: {e}")
-        return []
-
     for row in queries:
         try:
-            # Pass file content directly with filename
-            response = agent.run(
-                row["query"],
-                files={
-                    filename: file_content
-                }
-            )
+            with open(file_path, 'rb') as f:
+                response = agent.run(
+                    row["query"],
+                    files=[f]
+                )
             
             results.append(
                 {

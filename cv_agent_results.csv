@@ -1,9 +1,4 @@
 query,generated_response,expected_response
 Read sample_cv.pdf and tell me the candidate's name,The candidate's name is John Michael Smith.,John Michael Smith
-Read sample_cv.pdf and tell me how many years of experience the candidate has,"The candidate, John Michael Smith, has a total of **8 years of experience** in full-stack development.",8 years
-Read sample_cv.pdf and list the candidate's programming languages,"The candidate's programming languages listed in the CV are:
-
-- Python
-- JavaScript
-- TypeScript
-- Java","Python, JavaScript, TypeScript, Java"
+Read sample_cv.pdf and tell me how many years of experience the candidate has,"The candidate has 8 years of experience in full-stack development, as stated in the professional summary of the CV.",8 years
+Read sample_cv.pdf and list the candidate's programming languages,The candidate's programming languages are: - Python - JavaScript - TypeScript - Java,"Python, JavaScript, TypeScript, Java"
