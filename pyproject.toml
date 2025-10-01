@@ -11,6 +11,7 @@ dependencies = [
     "glaip-sdk>=0.0.5,<0.0.6",
     "gllm-evals>=0.0.22,<0.0.23",
     "python-dotenv>=1.0.0,<2.0.0",
+    "deepeval (>=3.6.0,<4.0.0)",
 ]
 
 [[tool.poetry.source]]

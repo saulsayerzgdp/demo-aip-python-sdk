@@ -4,7 +4,8 @@ import csv
 import json
 import os
 import uuid
-from typing import Any
+from pathlib import Path
+from typing import Any, Union, BinaryIO
 
 from glaip_sdk import Client
 from gllm_evals.dataset.dict_dataset import DictDataset
@@ -71,30 +72,74 @@ Always use the tool to read the file before answering questions about it.""",
     return agent
 
 
-def process_queries(agent, queries: list[dict[str, str]]) -> list[dict[str, str]]:
+def read_file_as_binary(file_path: Union[str, Path, BinaryIO]) -> tuple[bytes, str]:
+    """Read a file as binary and return its content along with the filename.
+    
+    Args:
+        file_path: Path to the file or file-like object
+        
+    Returns:
+        Tuple of (file_content, filename)
+    """
+    if hasattr(file_path, 'read'):  # Already a file-like object
+        file_obj = file_path
+        file_content = file_obj.read()
+        filename = getattr(file_obj, 'name', 'file.pdf')
+    else:  # String or Path
+        file_path = Path(file_path)
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+        filename = file_path.name
+    
+    return file_content, filename
+
+
+def process_queries(agent, queries: list[dict[str, str]], file_path: str = "sample_cv.pdf") -> list[dict[str, str]]:
     """Process all queries using the agent.
 
     Args:
         agent: The glaip_sdk agent to use
         queries: List of query dictionaries
+        file_path: Path to the file to process
 
     Returns:
         List of result dictionaries with query, generated_response, and expected_response
     """
     results = []
+    
+    # Read the file once and reuse for all queries
+    try:
+        file_content, filename = read_file_as_binary(file_path)
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+        return []
 
     for row in queries:
-        response = agent.run(row["query"], files=["sample_cv.pdf"])
-        
-        results.append(
-            {
-                "query": row["query"],
-                "generated_response": response,
-                "expected_response": row.get("expected_response", ""),
-            }
-        )
-
-        print(f"\nQuery: {row['query']}\nResponse: {response}")
+        try:
+            # Pass file content directly with filename
+            response = agent.run(
+                row["query"],
+                files={
+                    filename: file_content
+                }
+            )
+            
+            results.append(
+                {
+                    "query": row["query"],
+                    "generated_response": response,
+                    "expected_response": row.get("expected_response", ""),
+                }
+            )
+        except Exception as e:
+            print(f"Error processing query: {row['query']}\nError: {e}")
+            results.append(
+                {
+                    "query": row["query"],
+                    "generated_response": f"Error: {str(e)}",
+                    "expected_response": row.get("expected_response", ""),
+                }
+            )
 
     return results
 

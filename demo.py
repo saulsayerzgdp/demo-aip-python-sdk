@@ -18,7 +18,6 @@ CSV_FILE = "cv_agent_results.csv"
 async def main():
     """Main function to run the CV agent end-to-end pipeline."""
     
-    # Initialize client
     client = Client()
     
     queries = load_queries(CSV_FILE)
