@@ -42,7 +42,7 @@ def save_results(rows: list[dict[str, Any]], output_path: str) -> None:
             )
         cleaned_rows.append(cleaned_row)
 
-    fieldnames = ["query", "generated_response", "expected_response"]
+    fieldnames = ["query", "generated_response", "expected_response", "relevancy_rating", "completeness_score", "redundancy_score", "explanation"]
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -142,29 +142,69 @@ async def evaluate_results(agent, query_file: str = "cv_agent_results.csv", file
         query_file: Path to the CSV file containing queries
         file_path: Path to the file to process
     """
-    # Load queries
     queries = load_queries(query_file)
     
-    # Process queries
-    results = process_queries(agent, queries, file_path)
+    results = []
+    for query in queries:
+        results.append({
+            "query": query["query"],
+            "generated_response": "",
+            "expected_response": query.get("expected_response", ""),
+            "relevancy_rating": "",
+            "completeness_score": "",
+            "redundancy_score": "",
+            "explanation": ""
+        })
+
+    print("\nGenerating responses...")
+    for i, query in enumerate(queries, 1):
+        try:
+            with open(file_path, 'rb') as f:
+                response = agent.run(
+                    query["query"],
+                    files=[f]
+                )
+        except Exception as e:
+            print(f"Error processing query: {str(e)}")
+            response = f"Error: {str(e)}"
+        
+        result_data = results[i-1]
+        result_data["generated_response"] = response
+        
+        save_results(results, query_file)
     
-    # Save results
-    save_results(results, query_file)
-    
-    # Evaluate results
-    dataset = DictDataset.from_csv(query_file)
     generation_evaluator = GEvalGenerationEvaluator(
         model="openai/gpt-4o-mini", model_credentials=os.getenv("OPENAI_API_KEY")
     )
 
-    print("\n" + "=" * 60)
-    print("EVALUATION RESULTS")
-    print("=" * 60)
-
-    for i, data in enumerate(dataset.load()):
-        print(f"\n--- Query {i+1}: {data['query']} ---")
-        generation_result = await generation_evaluator.evaluate(data)
-        print(json.dumps(generation_result, indent=2))
+    print("\nEvaluating responses...")
+    for i, (query, result_data) in enumerate(zip(queries, results), 1):
+        eval_data = {
+            "query": query["query"],
+            "generated_response": result_data["generated_response"],
+            "expected_response": query.get("expected_response", ""),
+        }
+        
+        generation_result = await generation_evaluator.evaluate(eval_data)
+        
+        relevancy_rating = generation_result.get("geval_generation_evals", {}).get("relevancy_rating", "")
+        completeness = generation_result.get("geval_generation_evals", {}).get("completeness", {})
+        redundancy = generation_result.get("geval_generation_evals", {}).get("redundancy", {})
+        
+        explanations = []
+        if completeness.get("explanation"):
+            explanations.append(f"Completeness: {completeness['explanation']}")
+        if redundancy.get("explanation"):
+            explanations.append(f"Redundancy: {redundancy['explanation']}")
+        
+        result_data.update({
+            "relevancy_rating": relevancy_rating,
+            "completeness_score": completeness.get("score", ""),
+            "redundancy_score": redundancy.get("score", ""),
+            "explanation": " | ".join(explanations)
+        })
+        
+        save_results(results, query_file)
 
     print("\n" + "=" * 60)
     print("Evaluation complete!")

@@ -25,7 +25,7 @@ async def main():
     agent = client.create_agent(
         name=f"cv-reader-agent-{uuid.uuid4().hex[:8]}",
         instruction="""You are a helpful assistant that can read and analyze CV/resume files using provided tools.
-Keep your answer concise and to the point.""",
+Keep your answer concise and to the point, only output the direct answer without any additional explanation.""",
         tools=[pdf_reader_tool],
     )
 
