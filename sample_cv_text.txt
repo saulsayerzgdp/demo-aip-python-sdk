@@ -1,0 +1,38 @@
+CURRICULUM VITAE
+
+Name: John Michael Smith
+Email: john.smith@email.com
+Phone: +1 (555) 123-4567
+Location: San Francisco, CA
+
+PROFESSIONAL SUMMARY
+Senior Software Engineer with 8 years of experience in full-stack development, specializing in Python, JavaScript, and cloud technologies. Proven track record of leading teams and delivering scalable solutions.
+
+WORK EXPERIENCE
+
+Senior Software Engineer | Tech Solutions Inc. | 2020 - Present
+- Led a team of 5 engineers in developing microservices architecture
+- Implemented CI/CD pipelines reducing deployment time by 60%
+- Mentored junior developers and conducted code reviews
+
+Software Engineer | Digital Innovations LLC | 2017 - 2020
+- Developed RESTful APIs using Python Flask and FastAPI
+- Built responsive web applications with React and TypeScript
+- Collaborated with cross-functional teams on product features
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of California, Berkeley | 2013 - 2017
+GPA: 3.8/4.0
+
+SKILLS
+- Programming Languages: Python, JavaScript, TypeScript, Java
+- Frameworks: React, FastAPI, Flask, Node.js
+- Cloud: AWS, Docker, Kubernetes
+- Databases: PostgreSQL, MongoDB, Redis
+- Tools: Git, Jenkins, Terraform
+
+CERTIFICATIONS
+- AWS Certified Solutions Architect (2021)
+- Certified Kubernetes Administrator (2022)
