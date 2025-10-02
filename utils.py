@@ -1,15 +1,17 @@
 """Utility functions for CV agent demo."""
 
 import csv
-import json
 import os
 import uuid
 from pathlib import Path
 from typing import Any, Union, BinaryIO
 
+import dotenv
 from glaip_sdk import Client
 from gllm_evals.dataset.dict_dataset import DictDataset
 from gllm_evals.evaluator.geval_generation_evaluator import GEvalGenerationEvaluator
+
+dotenv.load_dotenv()
 
 
 def load_queries(csv_path: str) -> list[dict[str, str]]:
@@ -42,7 +44,7 @@ def save_results(rows: list[dict[str, Any]], output_path: str) -> None:
             )
         cleaned_rows.append(cleaned_row)
 
-    fieldnames = ["query", "generated_response", "expected_response", "relevancy_rating", "completeness_score", "redundancy_score", "explanation"]
+    fieldnames = ["query", "generated_response", "expected_response", "completeness_score", "redundancy_score", "explanation"]
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -150,7 +152,6 @@ async def evaluate_results(agent, query_file: str = "cv_agent_results.csv", file
             "query": query["query"],
             "generated_response": "",
             "expected_response": query.get("expected_response", ""),
-            "relevancy_rating": "",
             "completeness_score": "",
             "redundancy_score": "",
             "explanation": ""
@@ -173,38 +174,44 @@ async def evaluate_results(agent, query_file: str = "cv_agent_results.csv", file
         
         save_results(results, query_file)
     
+    # Initialize evaluator
     generation_evaluator = GEvalGenerationEvaluator(
         model="openai/gpt-4o-mini", model_credentials=os.getenv("OPENAI_API_KEY")
     )
 
+    # Second pass: Evaluate all responses using DictDataset
     print("\nEvaluating responses...")
-    for i, (query, result_data) in enumerate(zip(queries, results), 1):
-        eval_data = {
-            "query": query["query"],
-            "generated_response": result_data["generated_response"],
-            "expected_response": query.get("expected_response", ""),
-        }
+    dataset = DictDataset.from_csv(query_file)
+    
+    for i, data in enumerate(dataset.load(), 1):
+        generation_result = await generation_evaluator.evaluate(data)
         
-        generation_result = await generation_evaluator.evaluate(eval_data)
+        # Find the corresponding result in our results list to update
+        result_data = None
+        for result in results:
+            if result["query"] == data["query"] and result["generated_response"] == data["generated_response"]:
+                result_data = result
+                break
         
-        relevancy_rating = generation_result.get("geval_generation_evals", {}).get("relevancy_rating", "")
-        completeness = generation_result.get("geval_generation_evals", {}).get("completeness", {})
-        redundancy = generation_result.get("geval_generation_evals", {}).get("redundancy", {})
-        
-        explanations = []
-        if completeness.get("explanation"):
-            explanations.append(f"Completeness: {completeness['explanation']}")
-        if redundancy.get("explanation"):
-            explanations.append(f"Redundancy: {redundancy['explanation']}")
-        
-        result_data.update({
-            "relevancy_rating": relevancy_rating,
-            "completeness_score": completeness.get("score", ""),
-            "redundancy_score": redundancy.get("score", ""),
-            "explanation": " | ".join(explanations)
-        })
-        
-        save_results(results, query_file)
+        if result_data:
+            completeness = generation_result.get("geval_generation_evals", {}).get("completeness", {})
+            redundancy = generation_result.get("geval_generation_evals", {}).get("redundancy", {})
+            
+            explanations = []
+            if completeness.get("explanation"):
+                explanations.append(f"Completeness: {completeness['explanation']}")
+            if redundancy.get("explanation"):
+                explanations.append(f"Redundancy: {redundancy['explanation']}")
+            
+            result_data.update({
+                "completeness_score": completeness.get("score", ""),
+                "redundancy_score": redundancy.get("score", ""),
+                "explanation": " | ".join(explanations)
+            })
+            
+            # Save after each evaluation
+            save_results(results, query_file)
+            print(f"✓ Saved evaluation {i}: completeness={completeness.get('score', '')}, redundancy={redundancy.get('score', '')}")
 
     print("\n" + "=" * 60)
     print("Evaluation complete!")
